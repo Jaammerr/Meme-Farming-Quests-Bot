@@ -53,6 +53,7 @@ class MemeQuests:
             "https": self.account.proxy,
         }
         session.verify = False
+
         return session
 
     async def send_request(
