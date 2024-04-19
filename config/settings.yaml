@@ -1,0 +1,3 @@
+eth_rpc: https://eth.llamarpc.com
+threads: 5
+delay_between_quests: 5
