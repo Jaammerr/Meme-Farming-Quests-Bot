@@ -1,14 +1,12 @@
+from embit import bip32, script
+from embit.networks import NETWORKS
 from eth_account.messages import encode_defunct
+from mnemonic import Mnemonic
 from web3 import Web3, Account
 
 from models import SignatureData, P2TRBTCWallet
 from loader import config
 
-from hdwallet import HDWallet
-from hdwallet.utils import generate_entropy
-from hdwallet.symbols import BTC as SYMBOL
-
-from btclib.b32 import p2tr
 
 Account.enable_unaudited_hdwallet_features()
 
@@ -39,12 +37,19 @@ class Wallet:
 
     @staticmethod
     def generate_p2tr_wallet() -> P2TRBTCWallet:
-        hdwallet = HDWallet(symbol=SYMBOL, use_default_path=False)
-        hdwallet.from_entropy(entropy=generate_entropy(strength=128), language="english")
-        hdwallet.from_path("m/86'/0'/0'/0/7")
-        address = p2tr(hdwallet.compressed())
+        mnemo = Mnemonic("english")
+        mnemonic = mnemo.generate(strength=256)
+        seed = mnemo.to_seed(mnemonic)
+
+        taproot_derivation_path = f"m/86'/0'/0'/0/0"
+        root = bip32.HDKey.from_seed(seed, version=b"\x04\x88\xad\xe4")
+        network = NETWORKS["main"]
+
+        taproot_key = root.derive(taproot_derivation_path)
+        taproot_script_pubkey = script.p2tr(taproot_key)
+        taproot_address = taproot_script_pubkey.address(network)
 
         return P2TRBTCWallet(
-            mnemonic=hdwallet.mnemonic(),
-            address=address
+            mnemonic=mnemonic,
+            address=taproot_address,
         )
