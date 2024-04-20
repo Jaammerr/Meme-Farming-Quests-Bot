@@ -27,7 +27,9 @@ class MemeQuests:
         self.account = account
         self.session = self.setup_session()
         self.web3 = Web3(Web3.HTTPProvider(config.eth_rpc))
+
         self.wallet = Wallet(account.pk_or_mnemonic)
+        self.ordinal_wallet = self.wallet.generate_p2tr_wallet()
 
     @property
     def address(self) -> str:
@@ -95,11 +97,11 @@ class MemeQuests:
             return _verify_response(response.json())
         return response.json()
 
-    async def wallet_info(self):
+    async def wallet_info(self) -> dict:
         response = await self.send_request(
             request_type="GET", method=f"/wallet/info/{self.address}"
         )
-        print(response)
+        return response
 
     async def auth(self) -> bool:
         for _ in range(3):
@@ -141,6 +143,14 @@ class MemeQuests:
         )
         return QuestResult(**response)
 
+    async def submit_ordinal_wallet(self) -> QuestResult:
+        response = await self.send_request(
+            request_type="POST",
+            method="/farming/quest/ordinals",
+            json_data={"ordinals": self.ordinal_wallet.address},
+        )
+        return QuestResult(**response)
+
     async def get_quests(self) -> QuestsList:
         response = await self.send_request(request_type="GET", method="/farming/quests")
         return QuestsList(**response)
@@ -167,6 +177,8 @@ class MemeQuests:
                 try:
                     if quest.id == 1:
                         quest_result = await self.complete_connect_quest()
+                    elif quest.id == 0:
+                        quest_result = await self.submit_ordinal_wallet()
                     else:
                         quest_result = await self.complete_quest(quest.id, quest.type)
 
@@ -262,7 +274,7 @@ class MemeQuests:
 
         async with aiofiles.open(accounts_path, "a") as file:
             await file.write(
-                f"{self.account.auth_token}|{self.account.pk_or_mnemonic}|{self.get_proxy}\n"
+                f"{self.account.auth_token}|{self.account.pk_or_mnemonic}|{self.get_proxy}|{self.ordinal_wallet.address}:{self.ordinal_wallet.mnemonic}\n"
             )
 
     async def start(self) -> None:

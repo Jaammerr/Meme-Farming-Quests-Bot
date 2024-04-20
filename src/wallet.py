@@ -1,9 +1,14 @@
 from eth_account.messages import encode_defunct
 from web3 import Web3, Account
 
-from models import SignatureData
+from models import SignatureData, P2TRBTCWallet
 from loader import config
 
+from hdwallet import HDWallet
+from hdwallet.utils import generate_entropy
+from hdwallet.symbols import BTC as SYMBOL
+
+from btclib.b32 import p2tr
 
 Account.enable_unaudited_hdwallet_features()
 
@@ -29,4 +34,17 @@ class Wallet:
         signed_message = self.wallet.sign_message(encoded_message)
         return SignatureData(
             signature=signed_message.signature.hex(), message=self.sign_message
+        )
+
+
+    @staticmethod
+    def generate_p2tr_wallet() -> P2TRBTCWallet:
+        hdwallet = HDWallet(symbol=SYMBOL, use_default_path=False)
+        hdwallet.from_entropy(entropy=generate_entropy(strength=128), language="english")
+        hdwallet.from_path("m/86'/0'/0'/0/7")
+        address = p2tr(hdwallet.compressed())
+
+        return P2TRBTCWallet(
+            mnemonic=hdwallet.mnemonic(),
+            address=address
         )
