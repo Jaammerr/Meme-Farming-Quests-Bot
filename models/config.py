@@ -39,3 +39,13 @@ class Config(BaseModel):
     threads: int
     delay_between_quests: int
     accounts: list[Account]
+
+
+
+class ExportAccountData(BaseModel):
+    success: bool
+    pk_or_mnemonic: str
+    auth_token: str
+    proxy: str
+    ordinal_mnemonic: str | None = None
+    ordinal_address: str | None = None

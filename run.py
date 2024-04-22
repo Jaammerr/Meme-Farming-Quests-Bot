@@ -9,12 +9,13 @@ from src.utils import show_dev_info, setup_logger
 
 from loader import config, semaphore
 from models import Account
+from src.utils import export_accounts
 
 
 async def run_safe(account: Account):
     async with semaphore:
         meme_quests = MemeQuests(account)
-        await meme_quests.start()
+        return await meme_quests.start()
 
 
 async def run():
@@ -24,7 +25,9 @@ async def run():
     )
 
     tasks = [asyncio.create_task(run_safe(account)) for account in config.accounts]
-    await asyncio.gather(*tasks)
+    export_accounts_data = await asyncio.gather(*tasks)
+    export_accounts(export_accounts_data)
+
     logger.info("\n\nMeme Bot finished")
 
 

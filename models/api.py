@@ -23,3 +23,15 @@ class QuestsList(BaseModel):
         steaks: int
 
     quests: list[QuestData]
+
+
+
+class QuestsInfo(BaseModel):
+
+    class QuestData(BaseModel):
+        id: int
+        completed: bool
+        completedAt: int | None = None
+
+    rewards: list[QuestData]
+    ordinalsWallet: str | None = None

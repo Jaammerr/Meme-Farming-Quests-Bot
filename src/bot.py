@@ -8,7 +8,7 @@ from loguru import logger
 from web3 import Web3, Account
 
 from curl_cffi.requests import AsyncSession
-from models import Account as MemeAccount, QuestResult, QuestsList
+from models import Account as MemeAccount, QuestResult, QuestsList, QuestsInfo, ExportAccountData
 from twitter_api import Account as TwitterAccount
 from twitter_api.models import BindAccountParamsV1
 
@@ -155,6 +155,10 @@ class MemeQuests:
         response = await self.send_request(request_type="GET", method="/farming/quests")
         return QuestsList(**response)
 
+    async def quests_info(self) -> QuestsInfo:
+        response = await self.send_request(request_type="GET", method=f"/farming/info/{self.address}")
+        return QuestsInfo(**response)
+
     async def complete_quest(self, quest_id: int, quest_type: str) -> QuestResult:
         response = await self.send_request(
             request_type="POST",
@@ -171,10 +175,23 @@ class MemeQuests:
 
     async def complete_quests(self):
         quests = await self.get_quests()
+        quests_info = await self.quests_info()
+        completed_quests: list[int] = [quest.id for quest in quests_info.rewards if quest.completed]
+
         for quest in quests.quests:
 
             while True:
                 try:
+                    if quest.id in completed_quests:
+                        logger.warning(
+                            f"Account: {self.address} | Quest skipped: {quest.name} | Reason: Already completed"
+                        )
+
+                        if quest.id == 0:
+                            self.ordinal_wallet = None
+
+                        break
+
                     if quest.id == 1:
                         quest_result = await self.complete_connect_quest()
                     elif quest.id == 0:
@@ -207,8 +224,6 @@ class MemeQuests:
                     await self.process_sleep()
 
             await self.process_sleep()
-
-        # logger.success(f"Account: {self.address} | All quests completed successfully")
 
     async def bind_twitter(self) -> bool:
         for _ in range(3):
@@ -260,24 +275,48 @@ class MemeQuests:
         )
         return False
 
-    async def export_account(self, success: bool = True) -> None:
+    # async def export_account(self, success: bool = True) -> None:
+    #     if success:
+    #         logger.info(f"Account: {self.address} | Finished successfully")
+    #         accounts_path = os.path.join(
+    #             os.getcwd().replace("//src", ""), "config", "success_accounts.txt"
+    #         )
+    #     else:
+    #         logger.info(f"Account: {self.address} | Finished with error")
+    #         accounts_path = os.path.join(
+    #             os.getcwd().replace("//src", ""), "config", "failed_accounts.txt"
+    #         )
+    #
+    #     async with aiofiles.open(accounts_path, "a") as file:
+    #         await file.write(
+    #             f"{self.account.auth_token}|{self.account.pk_or_mnemonic}|{self.get_proxy}|{self.ordinal_wallet.address}:{self.ordinal_wallet.mnemonic}\n"
+    #         )
+
+    async def export_account(self, success: bool = True) -> ExportAccountData:
         if success:
             logger.info(f"Account: {self.address} | Finished successfully")
-            accounts_path = os.path.join(
-                os.getcwd().replace("//src", ""), "config", "success_accounts.txt"
+            return ExportAccountData(
+                success=True,
+                pk_or_mnemonic=self.account.pk_or_mnemonic,
+                auth_token=self.account.auth_token,
+                proxy=self.get_proxy,
+                ordinal_mnemonic=self.ordinal_wallet.mnemonic if self.ordinal_wallet else None,
+                ordinal_address=self.ordinal_wallet.address if self.ordinal_wallet else None,
             )
+
         else:
             logger.info(f"Account: {self.address} | Finished with error")
-            accounts_path = os.path.join(
-                os.getcwd().replace("//src", ""), "config", "failed_accounts.txt"
+            return ExportAccountData(
+                success=False,
+                pk_or_mnemonic=self.account.pk_or_mnemonic,
+                auth_token=self.account.auth_token,
+                proxy=self.get_proxy,
+                ordinal_mnemonic=None,
+                ordinal_address=None,
             )
 
-        async with aiofiles.open(accounts_path, "a") as file:
-            await file.write(
-                f"{self.account.auth_token}|{self.account.pk_or_mnemonic}|{self.get_proxy}|{self.ordinal_wallet.address}:{self.ordinal_wallet.mnemonic}\n"
-            )
 
-    async def start(self) -> None:
+    async def start(self) -> ExportAccountData:
         try:
             if not await self.auth():
                 return await self.export_account(success=False)

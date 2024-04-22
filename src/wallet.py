@@ -7,11 +7,6 @@ from web3 import Web3, Account
 from models import SignatureData, P2TRBTCWallet
 from loader import config
 
-from hdwallet import HDWallet
-from hdwallet.utils import generate_entropy
-from hdwallet.symbols import BTC as SYMBOL
-
-from btclib.b32 import p2tr
 
 Account.enable_unaudited_hdwallet_features()
 

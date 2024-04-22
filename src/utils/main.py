@@ -3,6 +3,8 @@ from sys import stderr
 from art import tprint
 from loguru import logger
 
+from models import ExportAccountData
+
 
 def show_dev_info():
     tprint("JamBit")
@@ -35,3 +37,23 @@ def setup_logger():
         " | <white>{message}</white>",
     )
     logger.add("logs/debug.log", level="DEBUG", rotation="1 week", compression="zip")
+
+
+
+def export_accounts(accounts: tuple[ExportAccountData]) -> None:
+    success_accounts = open("./config/success_accounts.txt", "a")
+    failed_accounts = open("./config/failed_accounts.txt", "a")
+
+    for account in accounts:
+        account_data = f"{account.auth_token}|{account.pk_or_mnemonic}|{account.proxy}" if not account.ordinal_mnemonic else f"{account.auth_token}|{account.pk_or_mnemonic}|{account.proxy}|{account.ordinal_mnemonic}:{account.ordinal_address}"
+
+        if account.success:
+            success_accounts.write(account_data + "\n")
+        else:
+            failed_accounts.write(account_data + "\n")
+
+    success_accounts.close()
+    failed_accounts.close()
+
+    logger.debug("Accounts results exported")
+
