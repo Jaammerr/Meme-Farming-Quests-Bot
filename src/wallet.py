@@ -14,10 +14,7 @@ Account.enable_unaudited_hdwallet_features()
 class Wallet:
     def __init__(self, pk_or_mnemonic: str):
         self.web3 = Web3(Web3.HTTPProvider(config.eth_rpc))
-        if pk_or_mnemonic.startswith("0x"):
-            self.wallet = self.web3.eth.account.from_key(pk_or_mnemonic)
-        else:
-            self.wallet = self.web3.eth.account.from_mnemonic(pk_or_mnemonic)
+        self.wallet = self.web3.eth.account.from_mnemonic(pk_or_mnemonic) if len(pk_or_mnemonic.split()) in (12, 24) else self.web3.eth.account.from_key(pk_or_mnemonic)
 
     @property
     def address(self) -> str:

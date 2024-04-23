@@ -196,6 +196,9 @@ class MemeQuests:
                         quest_result = await self.complete_connect_quest()
                     elif quest.id == 0:
                         quest_result = await self.submit_ordinal_wallet()
+                    elif quest.id == 9:
+                        logger.warning(f"Account: {self.address} | Quest skipped: {quest.name}")
+                        break
                     else:
                         quest_result = await self.complete_quest(quest.id, quest.type)
 

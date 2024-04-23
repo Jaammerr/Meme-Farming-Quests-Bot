@@ -7,20 +7,6 @@ class Account(BaseModel):
     auth_token: str
     proxy: str
 
-    @field_validator("pk_or_mnemonic", mode="before")
-    def check_mnemonic(cls, value) -> str:
-        if value.startswith("0x"):
-            return value
-
-        words = value.split(" ")
-        if len(words) not in (12, 24):
-            logger.error(
-                f"Mnemonic <<{value}>> is not in correct format | Need to be 12/24 words"
-            )
-            exit(1)
-
-        return value
-
     @field_validator("proxy", mode="before")
     def check_proxy(cls, value) -> str:
         proxy_values = value.split(":")
