@@ -8,7 +8,7 @@ from models import ExportAccountData
 
 def show_dev_info():
     tprint("JamBit")
-    print("\033[36m" + "VERSION: " + "\033[34m" + "1.0" + "\033[34m")
+    print("\033[36m" + "VERSION: " + "\033[34m" + "2.0" + "\033[34m")
     print("\033[36m" + "Channel: " + "\033[34m" + "https://t.me/JamBitPY" + "\033[34m")
     print(
         "\033[36m"
