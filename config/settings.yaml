@@ -1,0 +1,4 @@
+eth_rpc: https://eth.llamarpc.com
+threads: 5
+min_snapshot_amount: 10 # PERCENTAGE (%)
+max_snapshot_amount: 50 # PERCENTAGE (%)
